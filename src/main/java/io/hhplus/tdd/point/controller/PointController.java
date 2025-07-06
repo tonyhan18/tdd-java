@@ -1,5 +1,7 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.controller;
 
+import io.hhplus.tdd.point.entity.UserPoint;
+import io.hhplus.tdd.point.entity.PointHistory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -54,10 +56,11 @@ public class PointController {
      * TODO - 특정 유저의 포인트를 사용하는 기능을 작성해주세요.
      */
     @PatchMapping("{id}/use")
+    @Operation(summary = "포인트 사용", description = "특정 사용자의 포인트를 사용합니다.")
     public UserPoint use(
-            @PathVariable long id,
-            @RequestBody long amount
+            @Parameter(description = "사용자 ID", example = "1") @PathVariable long id,
+            @Parameter(description = "사용할 포인트 금액", example = "5000") @RequestBody long amount
     ) {
         return new UserPoint(0, 0, 0);
     }
-}
+} 
