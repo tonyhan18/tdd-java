@@ -1,6 +1,6 @@
 package io.hhplus.tdd.point.entity;
 
-import io.hhplus.tdd.point.model.TransactionType;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "포인트 거래 내역")
