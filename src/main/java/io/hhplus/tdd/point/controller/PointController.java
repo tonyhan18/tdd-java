@@ -2,6 +2,7 @@ package io.hhplus.tdd.point.controller;
 
 import io.hhplus.tdd.point.entity.UserPoint;
 import io.hhplus.tdd.point.entity.PointHistory;
+import io.hhplus.tdd.point.model.Amount;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,6 +50,11 @@ public class PointController {
             @Parameter(description = "사용자 ID", example = "1") @PathVariable long id,
             @Parameter(description = "충전할 포인트 금액", example = "10000") @RequestBody long amount
     ) {
+        // Amount 모델을 사용하여 금액 유효성 검증
+        Amount chargeAmount = Amount.of(amount);
+        log.info("포인트 충전 요청 - 사용자 ID: {}, 충전 금액: {}", id, chargeAmount.format());
+        
+        // TODO: 실제 비즈니스 로직 구현
         return new UserPoint(0, 0, 0);
     }
 
@@ -61,6 +67,17 @@ public class PointController {
             @Parameter(description = "사용자 ID", example = "1") @PathVariable long id,
             @Parameter(description = "사용할 포인트 금액", example = "5000") @RequestBody long amount
     ) {
+        // Amount 모델을 사용하여 금액 유효성 검증
+        Amount useAmount = Amount.of(amount);
+        log.info("포인트 사용 요청 - 사용자 ID: {}, 사용 금액: {}", id, useAmount.format());
+        
+        // TODO: 실제 비즈니스 로직 구현
+        // 예시: 잔액 확인 로직
+        // Amount currentBalance = Amount.of(currentUserPoint.point());
+        // if (!currentBalance.isGreaterThanOrEqual(useAmount)) {
+        //     throw new IllegalArgumentException("잔액이 부족합니다.");
+        // }
+        
         return new UserPoint(0, 0, 0);
     }
 } 
