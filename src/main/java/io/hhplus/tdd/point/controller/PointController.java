@@ -2,82 +2,91 @@ package io.hhplus.tdd.point.controller;
 
 import io.hhplus.tdd.point.entity.UserPoint;
 import io.hhplus.tdd.point.entity.PointHistory;
-import io.hhplus.tdd.point.model.Amount;
+import io.hhplus.tdd.point.service.UserPointService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
+/**
+ * 포인트 관련 REST API 컨트롤러
+ */
 @RestController
 @RequestMapping("/point")
-@Tag(name = "포인트 관리", description = "사용자 포인트 조회, 충전, 사용 API")
+@Tag(name = "Point", description = "포인트 관리 API")
 public class PointController {
 
-    private static final Logger log = LoggerFactory.getLogger(PointController.class);
+    private final UserPointService userPointService;
 
+    public PointController(UserPointService userPointService) {
+        this.userPointService = userPointService;
+    }
     /**
-     * TODO - 특정 유저의 포인트를 조회하는 기능을 작성해주세요.
+     * 사용자 포인트 조회
      */
-    @GetMapping("{id}")
-    @Operation(summary = "사용자 포인트 조회", description = "특정 사용자의 현재 포인트 잔액을 조회합니다.")
-    public UserPoint point(
-            @Parameter(description = "사용자 ID", example = "1") @PathVariable long id
-    ) {
-        return new UserPoint(0, 0, 0);
+    @GetMapping("/{userId}")
+    @Operation(summary = "사용자 포인트 조회", description = "특정 사용자의 포인트 정보를 조회합니다.")
+    public ResponseEntity<UserPoint> getUserPoint(
+            @Parameter(description = "사용자 ID", example = "1")
+            @PathVariable long userId) {
+        UserPoint userPoint = userPointService.getUserPoint(userId);
+        return ResponseEntity.ok(userPoint);
     }
 
     /**
-     * TODO - 특정 유저의 포인트 충전/이용 내역을 조회하는 기능을 작성해주세요.
+     * 포인트 거래 내역 조회
      */
-    @GetMapping("{id}/histories")
-    @Operation(summary = "포인트 내역 조회", description = "특정 사용자의 포인트 충전/사용 내역을 조회합니다.")
-    public List<PointHistory> history(
-            @Parameter(description = "사용자 ID", example = "1") @PathVariable long id
-    ) {
-        return List.of();
+    @GetMapping("/{userId}/histories")
+    @Operation(summary = "포인트 거래 내역 조회", description = "사용자의 포인트 거래 내역을 조회합니다.")
+    public ResponseEntity<List<PointHistory>> history(
+            @Parameter(description = "사용자 ID", example = "1")
+            @PathVariable long userId) {
+        
+        List<PointHistory> history = userPointService.getTransactionHistory(userId);
+        return ResponseEntity.ok(history);
     }
 
     /**
-     * TODO - 특정 유저의 포인트를 충전하는 기능을 작성해주세요.
+     * 포인트 충전
      */
-    @PatchMapping("{id}/charge")
-    @Operation(summary = "포인트 충전", description = "특정 사용자의 포인트를 충전합니다.")
-    public UserPoint charge(
-            @Parameter(description = "사용자 ID", example = "1") @PathVariable long id,
-            @Parameter(description = "충전할 포인트 금액", example = "10000") @RequestBody long amount
-    ) {
-        // Amount 모델을 사용하여 금액 유효성 검증
-        Amount chargeAmount = Amount.of(amount);
-        log.info("포인트 충전 요청 - 사용자 ID: {}, 충전 금액: {}", id, chargeAmount.format());
+    @PostMapping("/{userId}/charge")
+    @Operation(summary = "포인트 충전", description = "사용자의 포인트를 충전합니다.")
+    public ResponseEntity<UserPoint> chargePoint(
+            @Parameter(description = "사용자 ID", example = "1")
+            @PathVariable long userId,
+            @Parameter(description = "충전할 금액", example = "10000")
+            @RequestBody Map<String, Long> request) {
         
-        // TODO: 실제 비즈니스 로직 구현
-        return new UserPoint(0, 0, 0);
+        Long chargeAmount = request.get("amount");
+        if (chargeAmount == null || chargeAmount <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        UserPoint chargedUserPoint = userPointService.chargePoint(userId, chargeAmount);
+        return ResponseEntity.ok(chargedUserPoint);
     }
 
     /**
-     * TODO - 특정 유저의 포인트를 사용하는 기능을 작성해주세요.
+     * 포인트 사용
      */
-    @PatchMapping("{id}/use")
-    @Operation(summary = "포인트 사용", description = "특정 사용자의 포인트를 사용합니다.")
-    public UserPoint use(
-            @Parameter(description = "사용자 ID", example = "1") @PathVariable long id,
-            @Parameter(description = "사용할 포인트 금액", example = "5000") @RequestBody long amount
-    ) {
-        // Amount 모델을 사용하여 금액 유효성 검증
-        Amount useAmount = Amount.of(amount);
-        log.info("포인트 사용 요청 - 사용자 ID: {}, 사용 금액: {}", id, useAmount.format());
+    @PostMapping("/{userId}/use")
+    @Operation(summary = "포인트 사용", description = "사용자의 포인트를 사용합니다.")
+    public ResponseEntity<UserPoint> usePoint(
+            @Parameter(description = "사용자 ID", example = "1")
+            @PathVariable long userId,
+            @Parameter(description = "사용할 금액", example = "5000")
+            @RequestBody Map<String, Long> request) {
         
-        // TODO: 실제 비즈니스 로직 구현
-        // 예시: 잔액 확인 로직
-        // Amount currentBalance = Amount.of(currentUserPoint.point());
-        // if (!currentBalance.isGreaterThanOrEqual(useAmount)) {
-        //     throw new IllegalArgumentException("잔액이 부족합니다.");
-        // }
+        Long useAmount = request.get("amount");
+        if (useAmount == null || useAmount <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
         
-        return new UserPoint(0, 0, 0);
+        UserPoint usedUserPoint = userPointService.usePoint(userId, useAmount);
+        return ResponseEntity.ok(usedUserPoint);
     }
 } 
