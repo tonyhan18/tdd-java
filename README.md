@@ -2,6 +2,7 @@
 
 
 # 📜 보고자료
+- [ApiSpec 작성 문서](docs/apiSpec.md)
 - [의존성 주입 및 백엔드 설계 방식 보고서](docs/Basic.md)
 - [HashMap vs ConcurrentHashMap 및 통합테스트 설계 보고서](docs/Advance.md)
 
