@@ -16,7 +16,6 @@ import io.hhplus.tdd.point.entity.UserPoint;
 
 @DisplayName("UserPointService 통합 테스트")
 class UserPointServiceIntegrationTest {
-
     @Test
     @DisplayName("포인트 충전/사용/거래내역/잔액조회가 정상 동작한다")
     void basicUsage() {
