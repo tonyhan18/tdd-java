@@ -6,17 +6,20 @@ import io.hhplus.tdd.point.entity.PointHistory;
 import io.hhplus.tdd.point.entity.UserPoint;
 
 import io.hhplus.tdd.point.entity.TransactionType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -25,17 +28,17 @@ import static org.mockito.Mockito.*;
 class UserPointServiceTest {
 
     @Mock
-    private UserPointTable userPointTable;
+    UserPointTable userPointTable;
 
     @Mock
-    private PointHistoryTable pointHistoryTable;
+    PointHistoryTable pointHistoryTable;
 
-    private UserPointService userPointService;
+    @Mock
+    UserPointLockProvider lockProvider;
 
-    @BeforeEach
-    void setUp() {
-        userPointService = new UserPointService(userPointTable, pointHistoryTable);
-    }
+    @InjectMocks
+    UserPointService userPointService;
+
 
     @Test
     @DisplayName("사용자 포인트 조회")
@@ -64,6 +67,8 @@ class UserPointServiceTest {
         UserPoint currentUserPoint = new UserPoint(userId, currentBalance, System.currentTimeMillis());
         UserPoint updatedUserPoint = new UserPoint(userId, newBalance, System.currentTimeMillis());
         
+        // 0708 lock 취득 추가
+        when(lockProvider.getLock(userId)).thenReturn(new ReentrantLock());
         when(userPointTable.selectById(userId)).thenReturn(currentUserPoint);
         when(userPointTable.insertOrUpdate(userId, newBalance)).thenReturn(updatedUserPoint);
         when(pointHistoryTable.insert(eq(userId), eq(chargeAmount), eq(TransactionType.CHARGE), anyLong()))
@@ -89,6 +94,8 @@ class UserPointServiceTest {
         UserPoint currentUserPoint = new UserPoint(userId, currentBalance, System.currentTimeMillis());
         UserPoint updatedUserPoint = new UserPoint(userId, newBalance, System.currentTimeMillis());
         
+        // 0708 lock 취득 추가
+        when(lockProvider.getLock(userId)).thenReturn(new ReentrantLock());
         when(userPointTable.selectById(userId)).thenReturn(currentUserPoint);
         when(userPointTable.insertOrUpdate(userId, newBalance)).thenReturn(updatedUserPoint);
         when(pointHistoryTable.insert(eq(userId), eq(useAmount), eq(TransactionType.USE), anyLong()))
@@ -111,6 +118,8 @@ class UserPointServiceTest {
         long currentBalance = 500L;
         
         UserPoint currentUserPoint = new UserPoint(userId, currentBalance, System.currentTimeMillis());
+        // 0708 lock 취득 추가
+        when(lockProvider.getLock(userId)).thenReturn(new ReentrantLock());
         when(userPointTable.selectById(userId)).thenReturn(currentUserPoint);
 
         // when & then
