@@ -1,7 +1,6 @@
 package io.hhplus.tdd.point.service;
 
 import java.util.Comparator;
-import java.util.concurrent.locks.Lock;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
@@ -22,12 +21,10 @@ public class UserPointService {
 
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
-    private final UserPointLockProvider lockProvider;
 
-    public UserPointService(UserPointTable userPointTable, PointHistoryTable pointHistoryTable, UserPointLockProvider lockProvider) {
+    public UserPointService(UserPointTable userPointTable, PointHistoryTable pointHistoryTable) {
         this.userPointTable = userPointTable;
         this.pointHistoryTable = pointHistoryTable;
-        this.lockProvider = lockProvider;
     }
 
     /**
@@ -58,18 +55,19 @@ public class UserPointService {
      * @throws IllegalArgumentException 최대 포인트를 초과하는 경우
      */
     public UserPoint chargePoint(long userId, long chargeAmount) {
-        Lock lock = lockProvider.getLock(userId);
-        lock.lock();
-        try {
-            // 임계 구역: 동일 userId에 대해선 동시 접근 불가
-            UserPoint currentUserPoint = userPointTable.selectById(userId);
-            long newBalance = currentUserPoint.point() + chargeAmount;
-            UserPoint updatedUserPoint = userPointTable.insertOrUpdate(userId, newBalance);
-            pointHistoryTable.insert(userId, chargeAmount, TransactionType.CHARGE, updatedUserPoint.updateMillis());
-            return updatedUserPoint;
-        } finally {
-            lock.unlock();
-        }
+        // 현재 포인트 조회
+        UserPoint currentUserPoint = userPointTable.selectById(userId);
+        
+        // 충전 로직 적용
+        long newBalance = currentUserPoint.point() + chargeAmount;
+        
+        // 포인트 업데이트 (Entity에서 자동으로 검증됨)
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(userId, newBalance);
+        
+        // 거래 내역 기록
+        pointHistoryTable.insert(userId, chargeAmount, TransactionType.CHARGE, updatedUserPoint.updateMillis());
+        
+        return updatedUserPoint;
     }
 
 
@@ -81,17 +79,21 @@ public class UserPointService {
      * @throws IllegalArgumentException 잔액이 부족한 경우
      */
     public UserPoint usePoint(long userId, long useAmount) {
-        Lock lock = lockProvider.getLock(userId);
-        lock.lock();
-        try {
-            UserPoint currentUserPoint = userPointTable.selectById(userId);
-            currentUserPoint.validateSufficientBalance(useAmount);
-            long newBalance = currentUserPoint.point() - useAmount;
-            UserPoint updatedUserPoint = userPointTable.insertOrUpdate(userId, newBalance);
-            pointHistoryTable.insert(userId, useAmount, TransactionType.USE, updatedUserPoint.updateMillis());
-            return updatedUserPoint;
-        } finally {
-            lock.unlock();
-        }
+        // 현재 포인트 조회
+        UserPoint currentUserPoint = userPointTable.selectById(userId);
+        
+        // 잔액 확인 (Entity에서 검증)
+        currentUserPoint.validateSufficientBalance(useAmount);
+        
+        // 사용 로직 적용
+        long newBalance = currentUserPoint.point() - useAmount;
+        
+        // 포인트 업데이트 (Entity에서 자동으로 검증됨)
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(userId, newBalance);
+        
+        // 거래 내역 기록
+        pointHistoryTable.insert(userId, useAmount, TransactionType.USE, updatedUserPoint.updateMillis());
+        
+        return updatedUserPoint;
     }
 }
